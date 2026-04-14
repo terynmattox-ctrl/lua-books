@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lua's Books</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="header-brand">
+        <h1>Lua's Books</h1>
+        <p class="header-sub">Find your next favourite read</p>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" id="btn-discover" onclick="setView('discover')">Discover</button>
+        <button class="nav-btn" id="btn-mybooks" onclick="setView('mybooks')">
+          My Books
+          <span class="shelf-count" id="shelf-count" style="display:none"></span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- FOR YOU SECTION (shown when user has ratings) -->
+    <section id="for-you-section" class="hidden">
+      <div class="section-header">
+        <h2>For You</h2>
+        <p class="section-desc" id="for-you-desc">Based on your ratings</p>
+      </div>
+      <div id="for-you-cards" class="cards-row"></div>
+    </section>
+
+    <!-- DISCOVER VIEW -->
+    <section id="discover-view">
+
+      <!-- CONTROLS -->
+      <div class="controls-wrap">
+        <div class="search-row">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+              <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M13 13l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="search" id="search-input" placeholder="Search books or authors…" oninput="handleSearch(this.value)">
+          </div>
+          <label class="toggle-pill" title="Show only LGBTQ+ books">
+            <input type="checkbox" id="lgbtq-toggle" onchange="handleLgbtqToggle(this.checked)">
+            <span class="toggle-label">LGBTQ+ rep</span>
+          </label>
+          <label class="toggle-pill" title="Show adult books (Circe, Song of Achilles, etc.)">
+            <input type="checkbox" id="adult-toggle" onchange="handleAdultToggle(this.checked)">
+            <span class="toggle-label">Adult books</span>
+          </label>
+          <label class="toggle-pill" title="Hide books you've already read">
+            <input type="checkbox" id="hide-read-toggle" onchange="handleHideReadToggle(this.checked)">
+            <span class="toggle-label">Hide read</span>
+          </label>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Genre</span>
+          <div class="chips" id="genre-chips"></div>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Vibe</span>
+          <div class="chips" id="vibe-chips"></div>
+        </div>
+
+        <div class="active-filters" id="active-filters" style="display:none">
+          <span class="filter-label">Filters:</span>
+          <div id="active-filter-tags"></div>
+          <button class="clear-filters" onclick="clearAllFilters()">Clear all</button>
+        </div>
+      </div>
+
+      <div class="results-meta" id="results-meta"></div>
+      <div id="book-grid" class="book-grid"></div>
+    </section>
+
+    <!-- MY BOOKS VIEW -->
+    <section id="mybooks-view" class="hidden">
+      <div class="mybooks-tabs">
+        <button class="shelf-tab active" id="tab-read" onclick="setShelfTab('read')">
+          Read
+          <span id="read-count" class="tab-count">0</span>
+        </button>
+        <button class="shelf-tab" id="tab-want" onclick="setShelfTab('want')">
+          Want to Read
+          <span id="want-count" class="tab-count">0</span>
+        </button>
+      </div>
+      <div id="mybooks-grid" class="book-grid"></div>
+      <div id="mybooks-empty" class="empty-state hidden">
+        <p id="mybooks-empty-text"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="books.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
