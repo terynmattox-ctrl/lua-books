@@ -54,7 +54,7 @@ function loadState() {
         Object.assign(state.sliders, parsed.sliders);
       }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { console.error('Failed to load saved data:', e); }
 }
 
 function saveState() {
@@ -72,7 +72,7 @@ function saveState() {
       },
       sliders: state.sliders,
     }));
-  } catch (e) { /* ignore */ }
+  } catch (e) { console.error('Failed to save data:', e); }
 }
 
 // ─── Recommendation Engine ─────────────────────────────────────────────────────
@@ -588,9 +588,8 @@ function setView(view) {
 
   document.getElementById('discover-view').classList.toggle('hidden', view !== 'discover');
   document.getElementById('mybooks-view').classList.toggle('hidden', view !== 'mybooks');
-  document.getElementById('for-you-section').classList.toggle(
-    'hidden', view !== 'discover' || !hasEnoughRatings()
-  );
+  // For You always shows in discover view (renderForYou handles its own visibility)
+  if (view === 'discover') renderForYou();
 
   document.getElementById('btn-discover').classList.toggle('active', view === 'discover');
   document.getElementById('btn-mybooks').classList.toggle('active', view === 'mybooks');
