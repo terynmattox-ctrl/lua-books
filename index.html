@@ -76,6 +76,40 @@
           <div class="chips" id="vibe-chips"></div>
         </div>
 
+        <div class="filter-row slider-section">
+          <span class="filter-label">Mood</span>
+          <div class="sliders">
+            <div class="slider-item">
+              <span class="slider-ends">🤷</span>
+              <label class="slider-name" for="slider-romance">Romance</label>
+              <input type="range" class="mood-slider" id="slider-romance" min="0" max="100" value="50"
+                oninput="handleSlider('romance', this.value)">
+              <span class="slider-ends">💕</span>
+            </div>
+            <div class="slider-item">
+              <span class="slider-ends">😐</span>
+              <label class="slider-name" for="slider-humor">Funny</label>
+              <input type="range" class="mood-slider" id="slider-humor" min="0" max="100" value="50"
+                oninput="handleSlider('humor', this.value)">
+              <span class="slider-ends">😂</span>
+            </div>
+            <div class="slider-item">
+              <span class="slider-ends">🛋️</span>
+              <label class="slider-name" for="slider-adventure">Adventure</label>
+              <input type="range" class="mood-slider" id="slider-adventure" min="0" max="100" value="50"
+                oninput="handleSlider('adventure', this.value)">
+              <span class="slider-ends">⚔️</span>
+            </div>
+            <div class="slider-item">
+              <span class="slider-ends">☀️</span>
+              <label class="slider-name" for="slider-dark">Mood</label>
+              <input type="range" class="mood-slider" id="slider-dark" min="0" max="100" value="50"
+                oninput="handleSlider('dark', this.value)">
+              <span class="slider-ends">🌙</span>
+            </div>
+          </div>
+        </div>
+
         <div class="active-filters" id="active-filters" style="display:none">
           <span class="filter-label">Filters:</span>
           <div id="active-filter-tags"></div>

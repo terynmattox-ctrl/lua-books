@@ -24,6 +24,12 @@ let state = {
     showAdult: false,
     search: '',
   },
+  sliders: {
+    romance:   50,   // 0 = not romantic, 100 = very romantic
+    humor:     50,   // 0 = serious, 100 = funny
+    adventure: 50,   // 0 = quiet/cozy, 100 = action-packed
+    dark:      50,   // 0 = light & cozy, 100 = dark & heavy
+  },
   view: 'discover',
   shelfTab: 'read',
 };
@@ -44,6 +50,9 @@ function loadState() {
         state.filters.showAdult = parsed.filters.showAdult || false;
         state.filters.search = parsed.filters.search || '';
       }
+      if (parsed.sliders) {
+        Object.assign(state.sliders, parsed.sliders);
+      }
     }
   } catch (e) { /* ignore */ }
 }
@@ -60,7 +69,8 @@ function saveState() {
         hideRead: state.filters.hideRead,
         showAdult: state.filters.showAdult,
         search: state.filters.search,
-      }
+      },
+      sliders: state.sliders,
     }));
   } catch (e) { /* ignore */ }
 }
@@ -109,74 +119,93 @@ function buildProfile() {
   return profile;
 }
 
-function scoreBook(book, profile) {
-  // Returns 0–5 score (higher = better match)
-  if (!profile) return book.year; // fallback: sort by recency
+// Maps slider keys → the vibes/genres they represent
+const SLIDER_MAPPINGS = [
+  { key: 'romance',   vibes: ['Romantic'],                         genres: ['Romance'], w: 2.5 },
+  { key: 'humor',     vibes: ['Funny', 'Quirky'],                  genres: [],          w: 1.5 },
+  { key: 'adventure', vibes: ['Adventurous', 'Thrilling', 'Epic'], genres: [],          w: 1.5 },
+  { key: 'dark',      vibes: ['Dark', 'Emotional'],                genres: [],          w: 1.0 },
+];
 
+function scoreBook(book, profile) {
+  // Returns a score (higher = better match).
+  // Sliders always contribute; learned profile stacks on top.
   let score = 0;
   let weight = 0;
 
-  // Genre match (weight 2.0 per genre)
-  for (const g of book.genres) {
-    if (profile.genres[g] !== undefined) {
-      score += profile.genres[g] * 2.0;
-      weight += 2.0;
+  // ── Slider-based baseline ──────────────────────────────────────────────────
+  for (const { key, vibes, genres, w } of SLIDER_MAPPINGS) {
+    const pref = state.sliders[key] / 100;           // 0–1
+    const bookHas = book.vibes.some(v => vibes.includes(v))
+                 || book.genres.some(g => genres.includes(g));
+    // Match: book aligns with pref strength. Mismatch: slight inverse signal.
+    score  += bookHas ? (pref * 5 * w) : ((1 - pref) * 5 * 0.25 * w);
+    weight += w;
+  }
+
+  // ── Learned profile (layered on when user has rated books) ─────────────────
+  if (profile) {
+    for (const g of book.genres) {
+      if (profile.genres[g] !== undefined) {
+        score  += profile.genres[g] * 2.5;
+        weight += 2.5;
+      }
+    }
+    for (const v of book.vibes) {
+      if (profile.vibes[v] !== undefined) {
+        score  += profile.vibes[v] * 1.0;
+        weight += 1.0;
+      }
+    }
+    if (book.lgbtq && profile.lgbtqAvg !== null) {
+      score  += profile.lgbtqAvg * 1.5;
+      weight += 1.5;
     }
   }
 
-  // Vibe match (weight 1.0 per vibe)
-  for (const v of book.vibes) {
-    if (profile.vibes[v] !== undefined) {
-      score += profile.vibes[v] * 1.0;
-      weight += 1.0;
-    }
-  }
-
-  // LGBTQ match (weight 1.5 if user has rated LGBTQ books)
-  if (book.lgbtq && profile.lgbtqAvg !== null) {
-    score += profile.lgbtqAvg * 1.5;
-    weight += 1.5;
-  }
-
-  if (weight === 0) return 2.5; // neutral for totally unmatched books
-
-  const normalizedScore = score / weight; // 1–5 scale
-
-  // Small recency bonus (2020+ gets +0.1)
-  const recencyBonus = book.year >= 2020 ? 0.1 : book.year >= 2015 ? 0.05 : 0;
-
-  return normalizedScore + recencyBonus;
+  const normalized = weight > 0 ? score / weight : 2.5;
+  const recencyBonus = book.year >= 2020 ? 0.15 : book.year >= 2015 ? 0.05 : 0;
+  return normalized + recencyBonus;
 }
 
 function getWhyText(book, profile) {
-  if (!profile) return '';
   const reasons = [];
 
-  // Find best-matching genres
-  const topGenres = book.genres
-    .filter(g => profile.genres[g] >= 4)
-    .map(g => GENRE_LABELS[g] || g);
-  if (topGenres.length) reasons.push(`you love ${topGenres.join(' & ')}`);
+  // Learned profile reasons
+  if (profile) {
+    const topGenres = book.genres.filter(g => profile.genres[g] >= 4).map(g => GENRE_LABELS[g] || g);
+    if (topGenres.length) reasons.push(`you love ${topGenres.join(' & ')}`);
 
-  // Find best-matching vibes
-  const topVibes = book.vibes
-    .filter(v => profile.vibes[v] >= 4)
-    .slice(0, 2)
-    .map(v => v.toLowerCase());
-  if (topVibes.length) reasons.push(`${topVibes.join(', ')} books`);
+    const topVibes = book.vibes.filter(v => profile.vibes[v] >= 4).slice(0, 2).map(v => v.toLowerCase());
+    if (topVibes.length) reasons.push(`${topVibes.join(', ')} reads`);
 
-  if (book.lgbtq && profile.lgbtqAvg >= 4) reasons.push('LGBTQ+ rep');
+    if (book.lgbtq && profile.lgbtqAvg >= 4) reasons.push('LGBTQ+ rep');
+  }
 
-  return reasons.length ? `Because: ${reasons.join(' · ')}` : 'Matches your taste';
+  // Slider reasons (only add if no profile reason yet)
+  if (reasons.length === 0) {
+    for (const { key, vibes, genres } of SLIDER_MAPPINGS) {
+      if (state.sliders[key] >= 70) {
+        const bookHas = book.vibes.some(v => vibes.includes(v)) || book.genres.some(g => genres.includes(g));
+        if (bookHas) {
+          const labels = { romance: 'romantic', humor: 'funny', adventure: 'adventurous', dark: 'emotional' };
+          reasons.push(labels[key]);
+        }
+      }
+    }
+    if (reasons.length) return `Great ${reasons.join(' & ')} pick`;
+  }
+
+  return reasons.length ? `Because: ${reasons.join(' · ')}` : '';
 }
 
 // ─── Filtering & Sorting ────────────────────────────────────────────────────────
 
 function applyFilters(books, options = {}) {
-  const { forYou = false } = options;
+  const { forYou = false, seriesFirst = true } = options;
   const f = state.filters;
 
-  return books.filter(book => {
+  let filtered = books.filter(book => {
     // Adult content gate
     if (book.content === 'adult' && !f.showAdult) return false;
 
@@ -212,6 +241,19 @@ function applyFilters(books, options = {}) {
 
     return true;
   });
+
+  // Show only the first book in each series (keeps discover grid clean)
+  if (seriesFirst) {
+    const seenSeries = new Set();
+    filtered = filtered.filter(book => {
+      if (!book.series) return true;
+      if (seenSeries.has(book.series)) return false;
+      seenSeries.add(book.series);
+      return true;
+    });
+  }
+
+  return filtered;
 }
 
 function sortBooks(books, profile) {
@@ -290,7 +332,10 @@ function renderCard(book, compact = false) {
         <p class="book-meta">${book.year} · ${book.pages} pages${book.series ? '' : ' · Standalone'}</p>
         ${seriesTag ? `<p class="book-series">${seriesTag}</p>` : ''}
         <div class="book-tags">${genreTags}</div>
-        ${!compact ? `<p class="book-tagline">${book.tagline}</p>` : ''}
+        ${!compact ? `
+          <p class="book-tagline collapsed" id="tagline-${book.id}">${book.tagline}</p>
+          <button class="tagline-toggle" onclick="toggleTagline('${book.id}', this)">more</button>
+        ` : ''}
 
         <div class="book-actions">
           <div class="star-row" title="Rate this book">${stars}</div>
@@ -318,14 +363,9 @@ function renderForYou() {
   const profile = buildProfile();
   const section = document.getElementById('for-you-section');
 
-  if (!profile || profile.ratedCount < 2) {
-    section.classList.add('hidden');
-    return;
-  }
-
   const candidates = applyFilters(BOOKS, { forYou: true });
   const sorted = sortBooks(candidates, profile);
-  const top = sorted.slice(0, 8);
+  const top = sorted.slice(0, 5);
 
   if (top.length === 0) {
     section.classList.add('hidden');
@@ -333,8 +373,10 @@ function renderForYou() {
   }
 
   section.classList.remove('hidden');
-  document.getElementById('for-you-desc').textContent =
-    `Based on your ${profile.ratedCount} rated book${profile.ratedCount > 1 ? 's' : ''}`;
+  const ratedCount = profile ? profile.ratedCount : 0;
+  document.getElementById('for-you-desc').textContent = ratedCount > 0
+    ? `Based on your mood sliders + ${ratedCount} rated book${ratedCount > 1 ? 's' : ''}`
+    : 'Based on your mood — rate books to make this smarter';
 
   const container = document.getElementById('for-you-cards');
   container.innerHTML = top.map(book => {
@@ -478,6 +520,13 @@ function handleSearch(value) {
   renderForYou();
 }
 
+function handleSlider(key, value) {
+  state.sliders[key] = parseInt(value);
+  saveState();
+  renderForYou();
+  renderGrid();
+}
+
 function handleGenreChip(genre) {
   if (state.filters.genres.has(genre)) {
     state.filters.genres.delete(genre);
@@ -560,6 +609,19 @@ function hasEnoughRatings() {
   return Object.keys(state.ratings).length >= 2;
 }
 
+// ─── Tagline Toggle ───────────────────────────────────────────────────────────
+
+function toggleTagline(bookId, btn) {
+  const el = document.getElementById(`tagline-${bookId}`);
+  if (el.classList.contains('collapsed')) {
+    el.classList.remove('collapsed');
+    btn.textContent = 'less';
+  } else {
+    el.classList.add('collapsed');
+    btn.textContent = 'more';
+  }
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 let toastTimer;
@@ -607,6 +669,12 @@ function init() {
   document.getElementById('adult-toggle').checked = state.filters.showAdult;
   document.getElementById('hide-read-toggle').checked = state.filters.hideRead;
   document.getElementById('search-input').value = state.filters.search;
+
+  // Restore slider positions
+  for (const key of Object.keys(state.sliders)) {
+    const el = document.getElementById(`slider-${key}`);
+    if (el) el.value = state.sliders[key];
+  }
 
   renderChips();
   renderGrid();
