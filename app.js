@@ -209,11 +209,14 @@ function applyFilters(books, options = {}) {
     // Adult content gate
     if (book.content === 'adult' && !f.showAdult) return false;
 
+    // Always hide "not interested" books from discover/for-you
+    if (state.shelves[book.id] === 'nope') return false;
+
+    // Always hide read books from discover (they live in My Books)
+    if (state.shelves[book.id] === 'read' && !forYou) return false;
+
     // For You: only unread books
     if (forYou && state.shelves[book.id] === 'read') return false;
-
-    // Hide read books
-    if (f.hideRead && state.shelves[book.id] === 'read') return false;
 
     // LGBTQ filter
     if (f.lgbtqOnly && !book.lgbtq) return false;
@@ -351,6 +354,9 @@ function renderCard(book, compact = false) {
               ${shelf === 'want' ? '♥ Saved' : 'Want to Read'}
             </button>
           </div>
+          <button class="nope-btn" onclick="handleShelf('${book.id}', 'nope')" title="Hide this book">
+            Not interested
+          </button>
         </div>
       </div>
     </article>
@@ -409,9 +415,11 @@ function renderMyBooks() {
   const tab = state.shelfTab;
   const readBooks = BOOKS.filter(b => state.shelves[b.id] === 'read');
   const wantBooks = BOOKS.filter(b => state.shelves[b.id] === 'want');
+  const nopeBooks = BOOKS.filter(b => state.shelves[b.id] === 'nope');
 
   document.getElementById('read-count').textContent = readBooks.length;
   document.getElementById('want-count').textContent = wantBooks.length;
+  document.getElementById('nope-count').textContent = nopeBooks.length;
 
   const shelfCount = readBooks.length + wantBooks.length;
   const countEl = document.getElementById('shelf-count');
@@ -422,17 +430,20 @@ function renderMyBooks() {
     countEl.style.display = 'none';
   }
 
-  const books = tab === 'read' ? readBooks : wantBooks;
+  const bookMap = { read: readBooks, want: wantBooks, nope: nopeBooks };
+  const books = bookMap[tab] || [];
   const grid = document.getElementById('mybooks-grid');
   const empty = document.getElementById('mybooks-empty');
 
   if (books.length === 0) {
     grid.innerHTML = '';
     empty.classList.remove('hidden');
-    document.getElementById('mybooks-empty-text').textContent =
-      tab === 'read'
-        ? "No books marked as read yet — go find something! ✨"
-        : "Nothing saved to read yet — explore and save some books!";
+    const emptyText = {
+      read: "No books marked as read yet — go find something! ✨",
+      want: "Nothing saved yet — explore and save some books!",
+      nope: "No hidden books."
+    };
+    document.getElementById('mybooks-empty-text').textContent = emptyText[tab] || '';
   } else {
     empty.classList.add('hidden');
     grid.innerHTML = books.map(b => renderCard(b)).join('');
@@ -502,12 +513,13 @@ function handleRating(bookId, newRating) {
 function handleShelf(bookId, shelf) {
   const current = state.shelves[bookId];
   if (current === shelf) {
-    // Toggle off
     delete state.shelves[bookId];
-    showToast(shelf === 'read' ? 'Removed from Read' : 'Removed from Want to Read');
+    const undoLabels = { read: 'Removed from Read', want: 'Removed from Want to Read', nope: 'Unhidden ✓' };
+    showToast(undoLabels[shelf] || 'Removed');
   } else {
     state.shelves[bookId] = shelf;
-    showToast(shelf === 'read' ? 'Marked as read ✓' : 'Saved to Want to Read ♥');
+    const labels = { read: 'Marked as read ✓', want: 'Saved to Want to Read ♥', nope: 'Hidden — find it in My Books' };
+    showToast(labels[shelf] || 'Saved');
   }
   saveState();
   rerenderAll();
@@ -601,6 +613,7 @@ function setShelfTab(tab) {
   state.shelfTab = tab;
   document.getElementById('tab-read').classList.toggle('active', tab === 'read');
   document.getElementById('tab-want').classList.toggle('active', tab === 'want');
+  document.getElementById('tab-nope').classList.toggle('active', tab === 'nope');
   renderMyBooks();
 }
 

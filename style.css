@@ -557,6 +557,18 @@ main {
   overflow: hidden;
 }
 
+.nope-btn {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  padding: 2px 0;
+  text-align: left;
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.nope-btn:hover { opacity: 1; color: var(--primary); }
+
 .tagline-toggle {
   font-size: 0.72rem;
   color: var(--primary);

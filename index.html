@@ -60,10 +60,6 @@
             <input type="checkbox" id="adult-toggle" onchange="handleAdultToggle(this.checked)">
             <span class="toggle-label">Adult books</span>
           </label>
-          <label class="toggle-pill" title="Hide books you've already read">
-            <input type="checkbox" id="hide-read-toggle" onchange="handleHideReadToggle(this.checked)">
-            <span class="toggle-label">Hide read</span>
-          </label>
         </div>
 
         <div class="filter-row">
@@ -131,6 +127,10 @@
         <button class="shelf-tab" id="tab-want" onclick="setShelfTab('want')">
           Want to Read
           <span id="want-count" class="tab-count">0</span>
+        </button>
+        <button class="shelf-tab" id="tab-nope" onclick="setShelfTab('nope')">
+          Hidden
+          <span id="nope-count" class="tab-count">0</span>
         </button>
       </div>
       <div id="mybooks-grid" class="book-grid"></div>
