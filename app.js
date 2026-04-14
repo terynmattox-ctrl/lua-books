@@ -369,25 +369,8 @@ function renderForYou() {
   const profile = buildProfile();
   const section = document.getElementById('for-you-section');
 
-  // Top 5 ignores active genre/vibe/search filters — purely preference-driven.
-  // Only respects the adult toggle and read/nope exclusions.
-  const candidates = BOOKS.filter(b => {
-    if (b.content === 'adult' && !state.filters.showAdult) return false;
-    if (state.shelves[b.id] === 'read') return false;
-    if (state.shelves[b.id] === 'nope') return false;
-    return true;
-  });
-
-  // Series deduplication — first book in each series only
-  const seenSeries = new Set();
-  const deduplicated = candidates.filter(b => {
-    if (!b.series) return true;
-    if (seenSeries.has(b.series)) return false;
-    seenSeries.add(b.series);
-    return true;
-  });
-
-  const sorted = sortBooks(deduplicated, profile);
+  const candidates = applyFilters(BOOKS, { forYou: true });
+  const sorted = sortBooks(candidates, profile);
   const top = sorted.slice(0, 5);
 
   if (top.length === 0) {
