@@ -2,7 +2,7 @@
 // ~100 books curated for: romance, LGBTQ+ romance, mystery, mythology, fantasy, graphic novels, historical
 // To add books: paste new entries in the correct section. ISBN-13 preferred for cover images.
 
-const BOOKS = [
+var BOOKS = [
 
   // ── LGBTQ+ CONTEMPORARY ─────────────────────────────────────────────────────
 

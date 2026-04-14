@@ -548,6 +548,7 @@ function handleGenreChip(genre) {
   saveState();
   renderChips();
   renderGrid();
+  renderForYou();
 }
 
 function handleVibeChip(vibe) {
@@ -559,6 +560,7 @@ function handleVibeChip(vibe) {
   saveState();
   renderChips();
   renderGrid();
+  renderForYou();
 }
 
 function handleLgbtqToggle(checked) {
@@ -566,6 +568,7 @@ function handleLgbtqToggle(checked) {
   saveState();
   renderChips();
   renderGrid();
+  renderForYou();
 }
 
 function handleAdultToggle(checked) {
@@ -591,6 +594,7 @@ function clearAllFilters() {
   saveState();
   renderChips();
   renderGrid();
+  renderForYou();
 }
 
 // ─── View Switching ────────────────────────────────────────────────────────────
@@ -679,7 +683,8 @@ function init() {
   // Restore toggle states
   document.getElementById('lgbtq-toggle').checked = state.filters.lgbtqOnly;
   document.getElementById('adult-toggle').checked = state.filters.showAdult;
-  document.getElementById('hide-read-toggle').checked = state.filters.hideRead;
+  const hideReadEl = document.getElementById('hide-read-toggle');
+  if (hideReadEl) hideReadEl.checked = state.filters.hideRead;
   document.getElementById('search-input').value = state.filters.search;
 
   // Restore slider positions
