@@ -644,8 +644,17 @@ main {
 
 /* Compact card (For You) */
 .book-card.compact .book-cover-wrap { height: 220px; }
-.book-card.compact .book-tagline    { display: none; }
 .book-card.compact .book-title      { font-size: 0.82rem; }
+.compact-tagline {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 4px;
+}
 
 /* ─── My Books ───────────────────────────────────────────────────────────────── */
 .mybooks-tabs {

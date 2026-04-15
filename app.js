@@ -335,10 +335,12 @@ function renderCard(book, compact = false) {
         <p class="book-meta">${book.year} · ${book.pages} pages${book.series ? '' : ' · Standalone'}</p>
         ${seriesTag ? `<p class="book-series">${seriesTag}</p>` : ''}
         <div class="book-tags">${genreTags}</div>
-        ${!compact ? `
+        ${compact ? `
+          <p class="book-tagline compact-tagline">${book.tagline}</p>
+        ` : `
           <p class="book-tagline collapsed" id="tagline-${book.id}">${book.tagline}</p>
           <button class="tagline-toggle" onclick="toggleTagline('${book.id}', this)">more</button>
-        ` : ''}
+        `}
 
         <div class="book-actions">
           <div class="star-row" title="Rate this book">${stars}</div>
