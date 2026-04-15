@@ -606,8 +606,11 @@ function setView(view) {
 
   document.getElementById('discover-view').classList.toggle('hidden', view !== 'discover');
   document.getElementById('mybooks-view').classList.toggle('hidden', view !== 'mybooks');
-  // For You always shows in discover view (renderForYou handles its own visibility)
-  if (view === 'discover') renderForYou();
+  if (view === 'discover') {
+    renderForYou();
+  } else {
+    document.getElementById('for-you-section').classList.add('hidden');
+  }
 
   document.getElementById('btn-discover').classList.toggle('active', view === 'discover');
   document.getElementById('btn-mybooks').classList.toggle('active', view === 'mybooks');
@@ -663,7 +666,6 @@ function rerenderAll() {
     renderForYou();
   } else {
     renderMyBooks();
-    renderForYou();
   }
 
   // Update shelf count badge
